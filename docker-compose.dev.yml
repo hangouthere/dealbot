@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  dealbot:
+    build:
+      target: development
+    volumes:
+      - .:/build
+      # - /build/node_modules
+    environment:
+      - NODE_OPTIONS=--enable-source-maps --trace-warnings
+    ports:
+      - '9229:9229'

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "_Shared/*": ["./src/_shared/*"],
+      "-/*": ["./src/*"]
+    },
+    "checkJs": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules", "dist"]
+}

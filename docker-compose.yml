@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  dealbot:
+    image: nfg/dealbot:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - TERM=xterm-256color
+    tty: true

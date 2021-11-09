@@ -1,0 +1,8 @@
+Dockerfile
+node_modules
+dist
+.parcel-cache
+.git
+.vscode
+docker-compose*
+README.md

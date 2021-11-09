@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  dealbot:
+    build:
+      target: production
+    environment:
+      - TZ=America/Chicago
+      - LOG_LEVEL=debug
+    volumes:
+      - './junction:/app/junction'
+      # Note that we're hosting in dist for cleanliness.
+      # Real Production would mount in current directory
+      # (i.e., ./db:/app/db)
+      - './dist/db:/app/db'

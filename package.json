@@ -1,0 +1,58 @@
+{
+  "name": "dealbot",
+  "version": "1.0.0",
+  "license": "MIT",
+  "source": "./src/app.js",
+  "main": "./dist/app.js",
+  "engines": {
+    "node": ">=16"
+  },
+  "targets": {
+    "main": {
+      "optimize": true
+    }
+  },
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "docker-compose": "npm ci --force && echo \"Running in docker-compose... You should run interactively by attaching:\n\t\tdocker exec -it `hostname` npm run dev\" && tail -f /dev/null",
+    "build": "parcel build --no-source-maps",
+    "migrate": "knex migrate:latest",
+    "start": "node ./app",
+    "dev": "NODE_ENV=development concurrently -r 'npm:dev-concurrently*'",
+    "dev-concurrently:mkdir": "mkdir -p dist",
+    "dev-concurrently:watch": "parcel watch",
+    "predev-concurrently:run": "npm run migrate",
+    "dev-concurrently:run": "nodemon --inspect=0.0.0.0:9229 --trace-warnings -L . -- ${APP_FLAGS}"
+  },
+  "dependencies": {
+    "bookshelf": "^1.2.0",
+    "chalk": "^4.1.2",
+    "elapsed-time": "0.0.1",
+    "import-jsx": "^4.0.0",
+    "knex": "^0.95.14",
+    "limiter": "^2.1.0",
+    "loglevel": "^1.7.1",
+    "loglevel-plugin-prefix": "^0.8.4",
+    "md5": "^2.3.0",
+    "meow": "^9.0.0",
+    "mustache": "^4.2.0",
+    "node-fetch": "^2.6.6",
+    "react": "^17.0.2",
+    "rss-parser": "^3.12.0",
+    "sqlite3": "^5.0.2"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-react": "^7.16.0",
+    "@babel/register": "^7.16.0",
+    "@types/react": "^17.0.34",
+    "concurrently": "^6.4.0",
+    "nodemon": "^2.0.15",
+    "parcel": "^2.0.1",
+    "rimraf": "^3.0.2"
+  },
+  "alias": {
+    "_Shared": "./src/_shared",
+    "-": "./src"
+  }
+}
