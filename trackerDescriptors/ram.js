@@ -4,6 +4,8 @@ const config = {
     type: 'rss',
     data: {
       feed: 'https://www.reddit.com/r/buildapcsales/.rss?restrict_sr=1&sort=new',
+
+      //predicate: "search(ddr ecc !non-ecc)"
       predicate: entry => {
         const search = `${entry.title} ${entry.content}`.toLowerCase();
 

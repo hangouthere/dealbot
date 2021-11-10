@@ -1,0 +1,19 @@
+const config = {
+  name: 'Tracker Name for Specific Deal(s)',
+  source: {
+    type: 'rss',
+    data: {
+      feed: 'https://www.reddit.com/r/buildapcsales/.rss?sort=new',
+      predicate: entry => true
+    }
+  },
+  destination: {
+    type: 'discord',
+    data: {
+      webhookURL: 'https://discord.com/api/webhooks/id/token',
+      template: entry => {}
+    }
+  }
+};
+
+module.exports = config;

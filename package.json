@@ -16,27 +16,17 @@
   },
   "dependencies": {
     "import-jsx": "^4.0.0",
-    "lodash.result": "^4.5.2",
     "node-fetch": "^2.6.6",
     "react": "^17.0.2",
-    "rss-parser": "^3.12.0",
-    "typescript": "^4.3.5"
+    "rss-parser": "^3.12.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.14.9",
     "@babel/preset-react": "^7.14.5",
     "@babel/register": "^7.14.5",
-    "@types/lodash.isequal": "^4.5.5",
-    "@types/lodash.pick": "^4.4.6",
     "@types/react": "^17.0.15",
     "concurrently": "^6.2.0",
-    "eslint-config-xo-react": "^0.25.0",
-    "eslint-plugin-react": "^7.24.0",
-    "eslint-plugin-react-hooks": "^4.2.0",
     "nodemon": "^2.0.12",
     "parcel": "^2.0.1"
-  },
-  "alias": {
-    "_Shared": "./src/_shared"
   }
 }

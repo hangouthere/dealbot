@@ -2,41 +2,49 @@ const fs = require('fs/promises');
 const path = require('path');
 const fetch = require('node-fetch');
 
-//!FIXME Remove?
-const result = require('lodash.result');
-const RSSTracker = require('./RSSTracker');
+const RSSTracker = require('./TrackerSource/RssTrackerSource');
+const Tracker = require('./Tracker');
 
-const PATH_TRACKERS = process.env.PATH_TRACKERS || 'trackers';
+const PATH_TRACKERS = process.env.PATH_TRACKERS || 'trackerDescriptors';
 
 module.exports = class TrackerManager {
   constructor() {}
 
-  async loadTrackers() {
+  async importTrackers() {
     const files = await fs.readdir(PATH_TRACKERS);
 
     return files
       .map(file => require(path.join(process.cwd(), PATH_TRACKERS, file)))
-      .map(rawTracker => new RSSTracker(rawTracker));
+      .map(descriptor => new Tracker(descriptor));
   }
 
   async hydrateTrackers(trackers) {
     return Promise.all(
       trackers.map(async tracker => {
-        await tracker.retrieveData();
+        try {
+          await tracker.hydrate();
+
+          // DB Update Feed with Hashed Data
+        } catch (err) {
+          // DB Update Feed with Error'd Data
+
+          console.error(err);
+        }
+
         return tracker;
       })
     );
   }
 
   processRSS(tracker) {
-    const triggeredPredicateItems = tracker.items.filter(tracker.predicate);
+    const triggeredPredicateItems = tracker.items.filter(tracker.source.predicate);
 
     console.log(
       `Tracker: ${tracker.name}\t\tItems: ${tracker.items.length}\t\tPredicated: ${triggeredPredicateItems.length}`
     );
 
     const updates = triggeredPredicateItems.map(item =>
-      this.postToDiscord(tracker.config.destination.data.webhookURL, item)
+      this.postToDiscord(tracker.destinationConfig.data.webhookURL, item)
     );
 
     return Promise.all(updates);
@@ -44,6 +52,9 @@ module.exports = class TrackerManager {
 
   postToDiscord(webhookURL, item) {
     console.log('Posting: ' + item.title);
+
+    return;
+
     const discordTemplate = {
       content: 'Deal Item Found!',
       embeds: [
