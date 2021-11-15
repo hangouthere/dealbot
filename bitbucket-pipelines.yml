@@ -1,0 +1,12 @@
+image: node:16
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Install Dependencies & Build Project
+            caches:
+              - node
+            script:
+              - npm i --legacy-peer-deps
+              - npm run build

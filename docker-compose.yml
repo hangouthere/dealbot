@@ -2,17 +2,13 @@ version: '3.7'
 
 services:
   dealbot:
-    build: .
     image: nfg/dealbot:latest
-    volumes:
-      - .:/build
-      # - /build/node_modules
-    command: npm run docker-compose
     environment:
       - TERM=xterm-256color
-      - NODE_OPTIONS=--enable-source-maps
     stdin_open: true
     tty: true
+    volumes:
+      - './trackerDescriptors:/build/trackerDescriptors'
     ports:
       - '3000:1234'
       - '9229:9229'

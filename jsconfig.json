@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "paths": {
-      "_Shared/*": ["./src/_shared/*"]
+      "_Shared/*": ["./src/_shared/*"],
+      "-/*": ["./src/*"]
     },
     "checkJs": true,
     "target": "es6",
