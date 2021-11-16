@@ -28,27 +28,38 @@ docker-compose -f ./docker-compose.yml -f ./docker-compose.dev.yml up
 
 ## TODO:
 
-* Split Destinations and Sources
-    * Use folders!!!!
-        * Pathing env vars for both!
-    * Destinations must *always* be imported to get naming mapped out
-        * Should exist similar to existing importing of trackers
-    * Sources should "textually" point to destination id names
-    * Clean up TRACKERS verbage
-* Implement Destination API
+* Clean up TRACKERS verbage
 * Predicates need internalization to support JSON, as well as quick helpers in JS
-    * See buildapcsales Predicate impl
-* Implement Template
-    * HTTP Post should have Discord style built in for JSON example
-        * another actually included in example
 * Better error handling on HTTP requests
-* Rate Limiting Support
-    * https://www.useanvil.com/blog/engineering/throttling-and-consuming-apis-with-429-rate-limits/
-    * https://www.npmjs.com/package/limiter
-* Add env/cli flag supports for the following:
-    * ~~Trackers file location~~
-    * ~~LogLevel~~
-    * RSS and other pagination limits (ie, more than 50 items if desired)
+* Cronjob creation
+    * Write crontab at container start
+    * Use ENV vars to define pattern, or default
+    * Consider new pruning topics
+    * Consider new reporting topics
+* Pruning
+    * Destination needs a "minimum entry retainer count" `minEntryRetainerCount`
+        * Will always ensure we have at least this many entries, to avoid stale feed re-cycling
+        * HAVE A DEFAULT - JUST. IN. CASE!
+    * Errored Items need clearing at some frequency
+        * If not *actually* clearing, then some kind of `disabled` flag?
+            * This keeps the entry in the database as a `idHash` to be checked upon later
+        * Think through, don't want to re-add items to just re-error later due to a stale feed
+* Reporting
+    * Simple output
+        * Number of errored items
+          * And how many of them are disabled
+        * Stats?
+          * Needs new migration/table
+          * How many matches overall
+          * How many notifies overall
+* Docker Image Building
+    * In pipeline?
+        * https://support.atlassian.com/bitbucket-cloud/docs/run-docker-commands-in-bitbucket-pipelines/#Docker-layer-caching
+    * Pushed to dockerhub?
+* Add `docker-compose` documentation here
+
+### Nice to haves
+
 * Destination: Implement Twitter Posting
 * Source: Implement Web Scraping? Maybe super low priority?
 * Move common handlers from Trackers to strategy/implementations internally

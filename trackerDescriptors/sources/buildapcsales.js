@@ -10,7 +10,7 @@ const config = {
   name: 'General PC Deals',
   type: 'rss',
   destinations: [
-    'discord_gen_pc'
+    'discord_pc'
     // 'twitter_deals'
   ],
   data: {

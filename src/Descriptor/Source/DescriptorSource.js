@@ -38,8 +38,12 @@ module.exports = class TrackerSource {
     throw new Error('Not Implemented in TrackerSource');
   }
 
-  getEntrySerializedData(entry) {
+  async getEntrySerializedData(entry) {
     return JSON.stringify(entry);
+  }
+
+  async getEntryDeserializedData(content) {
+    return JSON.parse(content);
   }
 
   constructor(config) {

@@ -8,28 +8,29 @@ const DescriptorFactory = require('./DescriptorFactory');
 const PATH_DESCRIPTORS_BASE = process.env.PATH_DESCRIPTORS_BASE || 'trackerDescriptors';
 const DESCRIPTOR_EXTENSIONS = process.env.DESCRIPTOR_EXTENSIONS?.split(' ') || '.js .json'.split(' ');
 
-const BaseTrackerPath = path.join(process.cwd(), PATH_DESCRIPTORS_BASE);
-const SourcesTrackerPath = path.join(BaseTrackerPath, 'sources');
-const DestinationsTrackerPath = path.join(BaseTrackerPath, 'destinations');
+const PathDescriptorsBase = path.join(process.cwd(), PATH_DESCRIPTORS_BASE);
+const PathDescriptorsSources = path.join(PathDescriptorsBase, 'sources');
+const PathDescriptorsDestinations = path.join(PathDescriptorsBase, 'destinations');
 
 class DescriptorImporter {
-  static _loadMap = {
+  static LoadMap = {
     sources: {},
     destinations: {}
   };
 
   static async ImportSources() {
-    if (0 === Object.keys(this._loadMap.destinations).length) {
+    if (0 === Object.keys(this.LoadMap.destinations).length) {
       throw new Error('You must import at least ONE Descriptor before loading Sources!');
     }
 
-    return this.ImportDescriptors('sources', SourcesTrackerPath).then(
-      this._filterOutSourcesWithInvalidDestinations.bind(this)
-    );
+    // prettier-ignore
+    return this
+      .ImportDescriptors('sources', PathDescriptorsSources)
+      .then(this._filterOutSourcesWithInvalidDestinations.bind(this));
   }
 
   static async ImportDestinations() {
-    return this.ImportDescriptors('destinations', DestinationsTrackerPath);
+    return this.ImportDescriptors('destinations', PathDescriptorsDestinations);
   }
 
   static async ImportDescriptors(descriptorType, descriptorPath) {
@@ -40,12 +41,10 @@ class DescriptorImporter {
         files
           // Only include valid extensions
           .filter(fileName => DESCRIPTOR_EXTENSIONS.includes(path.extname(fileName).toLowerCase()))
-          // Import Descriptor Configurations Files as JS objects
+          // Import Descriptor Configurations Files as JS objects converted to Descriptors
           .map(this._loadDescriptorFromFilename.bind(this, descriptorType, descriptorPath))
           // Filter out NULL values
           .filter(v => !!v)
-          // Configure a Descriptor Type
-          .map(DescriptorFactory.CreateFromDescriptorType.bind(DescriptorFactory, descriptorType))
       );
     } catch (err) {
       if ('ENOENT' === err.code) {
@@ -61,7 +60,7 @@ class DescriptorImporter {
     // Assign Descriptor ID if not predefined, as the filename
     descriptorConfig.id = descriptorConfig.id ?? path.basename(filename).split('.')[0];
 
-    if (this._loadMap[loadType][descriptorConfig.id]) {
+    if (this.LoadMap[loadType][descriptorConfig.id]) {
       Logger.warn(
         chalk.yellow('Descriptor ID is already in use:'),
         `(${loadType}) [${filename}] ${descriptorConfig.id}`
@@ -69,20 +68,22 @@ class DescriptorImporter {
       return null;
     }
 
-    this._loadMap[loadType][descriptorConfig.id] = descriptorConfig;
+    const descriptor = DescriptorFactory.CreateFromDescriptorType(loadType, descriptorConfig);
 
-    Logger.debug(`Descriptor Loaded: (${loadType}) [${descriptorConfig.id}] ${filename}`);
+    this.LoadMap[loadType][descriptor.id] = descriptor;
 
-    return descriptorConfig;
+    Logger.debug(`Descriptor Loaded: (${loadType}) [${descriptor.id}] ${filename}`);
+
+    return descriptor;
   }
 
-  static _filterOutSourcesWithInvalidDestinations(sources) {
-    return sources
+  static _filterOutSourcesWithInvalidDestinations(sourceDescriptors) {
+    return sourceDescriptors
       .map(source => {
         // Filter out bad Destinations
         // Check every DestinationID defined in the Source Config against the Destinations LoadMap
         source.config.destinations = source.config.destinations.filter(destId => {
-          let hasDest = !!this._loadMap.destinations[destId];
+          let hasDest = !!this.LoadMap.destinations[destId];
 
           if (!hasDest) {
             Logger.error(
@@ -102,4 +103,6 @@ class DescriptorImporter {
 
 module.exports = DescriptorImporter;
 
-module.exports.BaseTrackerPath = BaseTrackerPath;
+module.exports.PathDescriptorsBase = PathDescriptorsBase;
+module.exports.PathDescriptorsSources = PathDescriptorsSources;
+module.exports.PathDescriptorsDestinations = PathDescriptorsDestinations;

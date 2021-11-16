@@ -62,6 +62,8 @@ class App {
   async _jobNotify() {
     this._startJob('Notify');
 
+    await new JobManager().notifyDestinations();
+
     this._endJob('Notify');
 
     return true;

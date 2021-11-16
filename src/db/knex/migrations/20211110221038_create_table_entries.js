@@ -5,11 +5,12 @@ exports.up = function (knex) {
     table.increments();
     table.timestamps();
     table.blob('error');
+    table.string('sourceId');
     table.string('idHash').unique();
     table.text('entryUrl').unique();
     table.blob('content');
-    table.boolean('isNotified');
-    //destinationIds = stringified array of items (ie, "'hello', 'world'")
+    table.boolean('isNotified').defaultTo(false);
+    //destinationIds = stringified array of destinationIDs (ie, "'hello', 'world'")
     table.string('destinationIds');
   });
 };

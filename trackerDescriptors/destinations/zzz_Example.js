@@ -2,13 +2,12 @@
 // It should cause a DuplicateEntry Warning
 
 const config = {
-  id: 'discord_gen_pc', // Should collide with ram.js and not be included!
-  name: 'Tracker Name for Specific Deal(s)',
-  destinations: ['discord_gen_pc'],
+  id: 'discord_pc', // Should collide with discord_pc.js and not be included!
+  name: 'Duplicate Destination ID Entry',
   type: 'http_post',
+  template: "doesn't matter",
   data: {
-    feed: 'https://www.reddit.com/r/buildapcsales/.rss?sort=new',
-    predicate: entry => true
+    feed: 'https://www.reddit.com/r/buildapcsales/.rss?sort=new'
   }
 };
 

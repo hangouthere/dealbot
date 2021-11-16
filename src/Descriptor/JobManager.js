@@ -6,8 +6,9 @@ const chalk = require('chalk');
 const DescriptorImporter = require('./DescriptorImporter');
 
 module.exports = class JobManager {
-  _loadMap = {};
-  _descriptors = [];
+  /**************************************************************************************************************************************
+   * Job Entry Points
+   *************************************************************************************************************************************/
 
   async scanAndCreateEntries() {
     Separator(true);
@@ -17,43 +18,59 @@ module.exports = class JobManager {
     return await this._saveSourcesEntries(hydratedSources);
   }
 
-  /**************************************************************************************************************************************
-   * Import and Hydrating Sources
-   *************************************************************************************************************************************/
+  async notifyDestinations() {
+    Separator(true);
+    const hydratedDestinations = await this._importAndHydrateDestinations();
+    Separator();
 
-  async _importAndHydrateSources() {
-    let destinations, sources;
-
-    destinations = await DescriptorImporter.ImportDestinations();
-    sources = await DescriptorImporter.ImportSources();
-
-    Logger.info(`Imported ${destinations.length} Destination Descriptors`);
-    Logger.info(`Imported ${sources.length} Source Descriptors`);
-
-    if (!sources.length) {
-      //! TODO - Test this
-      throw new Error(
-        `No TrackerDescriptors Found. Please ensure path is correct: ${DescriptorImporter.BaseTrackerPath}`
-      );
-    }
-
-    return await this._hydrateSources(sources);
+    return await this._notifyDestinations(hydratedDestinations);
   }
 
-  async _hydrateSources(sources) {
-    Logger.info(`Attempting to retrieve data for ${sources.length} Sources`);
+  /**************************************************************************************************************************************
+   * Common Helper Functions
+   *************************************************************************************************************************************/
 
-    const entries = sources.map(async currSource => {
+  async _hydrateDescriptors(descriptors) {
+    const entries = descriptors.map(async currDescriptor => {
       try {
-        await currSource.hydrate();
-        return currSource;
+        await currDescriptor.hydrate();
+        return currDescriptor;
       } catch (err) {
-        Logger.error(`Error Scanning Source: ${currSource.name}\n\t${err}`);
+        Logger.error(`Error Scanning Source: ${currDescriptor.name}\n\t${err}`);
         return null;
       }
     });
 
     return finalizeAndNormalize(entries);
+  }
+
+  async _importAllDescriptors() {
+    const destinations = await DescriptorImporter.ImportDestinations();
+    const sources = await DescriptorImporter.ImportSources();
+
+    Logger.info(`Imported ${destinations.length} Destination Descriptors`);
+    Logger.info(`Imported ${sources.length} Source Descriptors`);
+
+    return { sources, destinations };
+  }
+
+  /**************************************************************************************************************************************
+   * Import and Hydrating Sources
+   *************************************************************************************************************************************/
+
+  async _importAndHydrateSources() {
+    const { sources } = await this._importAllDescriptors();
+
+    if (!sources.length) {
+      //! TODO - Test this
+      throw new Error(
+        `No Destination Descriptors Found. Please ensure path is correct: ${DescriptorImporter.PathDescriptorsSources}`
+      );
+    }
+
+    Logger.info(`Attempting to retrieve data for ${sources.length} Source Descriptors`);
+
+    return await this._hydrateDescriptors(sources);
   }
 
   /**************************************************************************************************************************************
@@ -96,10 +113,11 @@ module.exports = class JobManager {
 
       try {
         model = await new EntriesModel({
-          id: model?.get('id') || null,
+          id: model?.id || null,
+          sourceId: source.id,
           idHash: source.getEntryHash(entry),
           entryUrl: source.getEntryUrl(entry),
-          content: source.getEntrySerializedData(entry),
+          content: await source.getEntrySerializedData(entry),
           destinationIds: source.destinationIds
         }).save();
 
@@ -112,16 +130,12 @@ module.exports = class JobManager {
     });
   }
 
-  /**************************************************************************************************************************************
-   * Filtering for Known Entries
-   *************************************************************************************************************************************/
-
   async _returnIfValidEntry(source, entry) {
     const idHash = source.getEntryHash(entry);
     const entryUrl = source.getEntryUrl(entry);
 
     // Check Feed Scan Status
-    const model = await this._getEntryByIdentifiers(idHash, entryUrl);
+    let model = await this._getEntryByIdentifiers(idHash, entryUrl);
 
     const hashAndNameString = chalk.gray(`[${idHash}] `) + source.getEntryName(entry);
 
@@ -129,6 +143,8 @@ module.exports = class JobManager {
       Logger.debug(chalk.bgGreen('New Entry Found'), hashAndNameString);
       return { isValid: true, model, entry };
     }
+
+    model = model.serialize();
 
     Logger.debug(chalk.yellow('Entry Previously Found'), hashAndNameString);
 
@@ -150,5 +166,68 @@ module.exports = class JobManager {
       // TODO: Need to make sure this error is actually 'not found'
       return null;
     }
+  }
+
+  /**************************************************************************************************************************************
+   **************************************************************************************************************************************
+   *************************************************************************************************************************************/
+
+  /**************************************************************************************************************************************
+   * Import and Hydrating Destinations
+   *************************************************************************************************************************************/
+
+  async _importAndHydrateDestinations() {
+    let { destinations } = await this._importAllDescriptors();
+
+    if (!destinations.length) {
+      //! TODO - Test this
+      throw new Error(
+        `No Destination Descriptors Found. Please ensure path is correct: ${DescriptorImporter.PathDescriptorsDestinations}`
+      );
+    }
+
+    destinations = await this._hydrateDescriptors(destinations);
+
+    const deserializePromises = destinations.map(
+      async destination => await destination.deserializeEntries(DescriptorImporter.LoadMap.sources)
+    );
+
+    await finalizeAndNormalize(deserializePromises);
+
+    return destinations;
+  }
+
+  /**************************************************************************************************************************************
+   * Notifying Destinations
+   *************************************************************************************************************************************/
+
+  async _notifyDestinations(hydratedDestinations) {
+    let totalNotifies = 0;
+
+    const promiseChain = hydratedDestinations.reduce(async (promiseChain, destination) => {
+      // Add up count for messaging
+      totalNotifies += destination.notifyData.length;
+      return await promiseChain.then(this._notifyDestination.bind(this, destination));
+    }, Promise.resolve());
+
+    Logger.info(
+      `Sending ${chalk.red(totalNotifies)} Notifications across ${chalk.yellow(
+        hydratedDestinations.length
+      )} Destinations...`
+    );
+
+    return await promiseChain;
+  }
+
+  async _notifyDestination(destination) {
+    Logger.info(chalk.cyan('Processing Notifications for Destination:'), destination.name);
+
+    return destination.iterateNotifies(async notifyData => {
+      const resp = await destination.notifyDestination(notifyData);
+
+      await EntriesModel.markNotified(notifyData.entry);
+
+      return resp;
+    });
   }
 };
