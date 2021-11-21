@@ -5,7 +5,7 @@ const Logger = require('-/Logger');
 const chalk = require('chalk');
 const DescriptorFactory = require('./DescriptorFactory');
 
-const PATH_DESCRIPTORS_BASE = process.env.PATH_DESCRIPTORS_BASE || 'trackerDescriptors';
+const PATH_DESCRIPTORS_BASE = process.env.PATH_DESCRIPTORS_BASE || 'junction';
 const DESCRIPTOR_EXTENSIONS = process.env.DESCRIPTOR_EXTENSIONS?.split(' ') || '.js .json'.split(' ');
 
 const PathDescriptorsBase = path.join(process.cwd(), PATH_DESCRIPTORS_BASE);
@@ -48,7 +48,7 @@ class DescriptorImporter {
       );
     } catch (err) {
       if ('ENOENT' === err.code) {
-        throw new Error(`Tracker Path cannot be read: ${descriptorPath}`);
+        throw new Error(`Descriptor Path (${descriptorType}) cannot be read: ${descriptorPath}`);
       } else {
         throw new Error(err);
       }
@@ -69,6 +69,13 @@ class DescriptorImporter {
     }
 
     const descriptor = DescriptorFactory.CreateFromDescriptorType(loadType, descriptorConfig);
+
+    // @ts-ignore
+    if (descriptor.hasOwnProperty('message')) {
+      Logger.error(`(${basePath}/${filename}) ${descriptor.message}`);
+
+      return null;
+    }
 
     this.LoadMap[loadType][descriptor.id] = descriptor;
 

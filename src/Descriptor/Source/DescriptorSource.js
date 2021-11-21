@@ -1,9 +1,14 @@
-const md5 = require('md5');
-const { finalizeAndNormalize } = require('../../Util');
+const { FinalizeAndNormalize, NormalizeToArrayIfPossible } = require('../../Util');
+const ComplexSearch = require('./Predicates/ComplexSearch');
 
-module.exports = class TrackerSource {
+const PREDICATES_INTERNAL = {
+  complexsearch: ComplexSearch
+};
+
+module.exports = class DescriptorSource {
   config = null;
   data = null;
+  predicate = null;
 
   get id() {
     return this.config?.id;
@@ -13,29 +18,25 @@ module.exports = class TrackerSource {
     return this.config?.name;
   }
 
-  get predicate() {
-    return this.config?.data.predicate;
-  }
-
   get destinationIds() {
     // Should be filtered on import!
     return this.config?.destinations;
   }
 
   get items() {
-    throw new Error('Not Implemented in TrackerSource');
+    throw new Error('Not Implemented in DescriptorSource');
   }
 
   getEntryHash(entry) {
-    throw new Error('Not Implemented in TrackerSource');
+    throw new Error('Not Implemented in DescriptorSource');
   }
 
   getEntryName(entry) {
-    throw new Error('Not Implemented in TrackerSource');
+    throw new Error('Not Implemented in DescriptorSource');
   }
 
   getEntryUrl(entry) {
-    throw new Error('Not Implemented in TrackerSource');
+    throw new Error('Not Implemented in DescriptorSource');
   }
 
   async getEntrySerializedData(entry) {
@@ -52,16 +53,35 @@ module.exports = class TrackerSource {
 
   async hydrate() {
     this.data = await this.performHydration();
+
+    this.predicate = this._hydratePredicate();
   }
 
   async performHydration() {
-    throw new Error('Not Implemented in TrackerSource');
+    throw new Error('Not Implemented in DescriptorSource');
   }
 
   async iterateEntries(cb) {
     // @ts-ignore
     const filteredItems = this.items.filter(this.predicate);
 
-    return finalizeAndNormalize(filteredItems.map(cb));
+    return FinalizeAndNormalize(filteredItems.map(cb));
+  }
+
+  _hydratePredicate() {
+    const configPredicate = NormalizeToArrayIfPossible(this.config.predicate);
+    const configIsFunc = typeof configPredicate === 'function';
+
+    let predicateType = configPredicate?.type?.toLowerCase() ?? 'complexsearch';
+    predicateType = configIsFunc ? 'suppliedFunction' : predicateType;
+
+    const chosenPredicate =
+      'suppliedFunction' === predicateType ? configPredicate : PREDICATES_INTERNAL[predicateType](configPredicate);
+
+    if (!chosenPredicate) {
+      throw new Error(`Invalid Predicate Type: ${predicateType}`);
+    }
+
+    return chosenPredicate;
   }
 };

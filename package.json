@@ -1,20 +1,27 @@
 {
   "name": "dealbot",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "MIT",
-  "bin": "./dist/app.js",
+  "source": "./src/app.js",
   "main": "./dist/app.js",
   "engines": {
-    "node": ">=10"
+    "node": ">=16"
+  },
+  "targets": {
+    "main": {
+      "optimize": true
+    }
   },
   "scripts": {
-    "docker-compose": "npm i --force && echo \"Running in docker-compose... You should run interactively by attaching:\n\t\tdocker exec -it -u abc `hostname` npm run dev\" && tail -f /dev/null",
-    "prestart": "mkdir -p dist && knex migrate:latest",
-    "build": "parcel build ./src/app.js",
-    "start": "npm run build && npx -y .",
+    "clean": "rimraf ./dist",
+    "docker-compose": "npm ci --force && echo \"Running in docker-compose... You should run interactively by attaching:\n\t\tdocker exec -it `hostname` npm run dev\" && tail -f /dev/null",
+    "build": "parcel build --no-source-maps",
+    "migrate": "knex migrate:latest",
+    "start": "node ./app",
     "dev": "NODE_ENV=development concurrently -r 'npm:dev-concurrently*'",
-    "dev-concurrently:watch": "parcel watch ./src/app.js",
-    "predev-concurrently:run": "npm run prestart",
+    "dev-concurrently:mkdir": "mkdir -p dist",
+    "dev-concurrently:watch": "parcel watch",
+    "predev-concurrently:run": "npm run migrate",
     "dev-concurrently:run": "nodemon --inspect=0.0.0.0:9229 --trace-warnings -L . -- ${APP_FLAGS}"
   },
   "dependencies": {
@@ -41,7 +48,8 @@
     "@types/react": "^17.0.34",
     "concurrently": "^6.4.0",
     "nodemon": "^2.0.15",
-    "parcel": "^2.0.1"
+    "parcel": "^2.0.1",
+    "rimraf": "^3.0.2"
   },
   "alias": {
     "_Shared": "./src/_shared",

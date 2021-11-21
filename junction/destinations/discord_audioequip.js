@@ -1,8 +1,8 @@
 const config = {
-  name: 'Discord - Garage Deals',
+  name: 'Discord - Audio Equipment Deals',
   type: 'http_post',
   template: `{
-                "content": "Deal Item Found!",
+                "content": "Listen to this Deal!",
                 "embeds": [
                   {
                     "title": ">> View Deal <<",
@@ -13,8 +13,8 @@ const config = {
                   }
                 ]
               }`,
-  data: {
-    url: 'https://discord.com/api/webhooks/910086000347320320/tRybMfR5lzxjDHcNHkD0e82vl1qXAcRkgYNJycEMT2n_sb9-hNf-WXBX5laweicy15af',
+  extraOptions: {
+    url: 'https://discord.com/api/webhooks/911477537631264828/nT22n4tTYwFecrpjkMQ5h7_-otWXgT68bFihlWYN0YplZWa2belBuUQ3R2Rce8NM46ok',
     requestLimits: {
       tokensPerInterval: 5,
       interval: 1000

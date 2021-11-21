@@ -6,7 +6,7 @@ const { isProd } = require('./Util');
 const Logger = loglevel.getLogger('DealBot');
 
 // Default LogLevel to passed in, or Debug if Dev, and Info if Prod
-const LOG_LEVEL = process.env.LOG_LEVEL || (isProd ? loglevel.levels.INFO : loglevel.levels.DEBUG);
+const LOG_LEVEL = process.env.LOG_LEVEL || (isProd ? loglevel.levels.INFO : loglevel.levels.TRACE);
 
 const colors = {
   TRACE: chalk.magenta,

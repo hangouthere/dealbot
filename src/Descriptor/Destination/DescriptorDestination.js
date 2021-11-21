@@ -2,11 +2,11 @@ const Mustache = require('mustache');
 
 const EntriesModel = require('-/db/Models/EntriesModel');
 const Logger = require('-/Logger');
-const { finalizeAndNormalize } = require('-/Util');
+const { FinalizeAndNormalize } = require('-/Util');
 
 module.exports = class DescriptorDestination {
   config = null;
-  data = null;
+  serializedData = null;
   notifyData = null;
 
   get id() {
@@ -24,12 +24,13 @@ module.exports = class DescriptorDestination {
   async hydrate() {
     const collection = await EntriesModel.getEntriesForDestinationId(this.config.id);
 
-    this.data = collection.serialize();
+    this.serializedData = collection.serialize();
   }
 
   async getTemplatedEntry(sourceLoader, entry) {
     return Mustache.render(this.config?.template, {
-      title: sourceLoader.getEntryName(entry),
+      // prettier-ignore
+      title: sourceLoader.getEntryName(entry).replaceAll('"', '\\"'),
       url: sourceLoader.getEntryUrl(entry)
     });
   }
@@ -37,7 +38,7 @@ module.exports = class DescriptorDestination {
   async deserializeEntries(sourceLoadMap) {
     let sourceId, chosenSourceLoader;
 
-    const deserializedModels = this.data.map(async entry => {
+    const deserializedModels = this.serializedData.map(async entry => {
       sourceId = entry.sourceId;
       chosenSourceLoader = sourceLoadMap[sourceId];
 
@@ -58,7 +59,7 @@ module.exports = class DescriptorDestination {
       };
     });
 
-    const notifyData = await finalizeAndNormalize(deserializedModels);
+    const notifyData = await FinalizeAndNormalize(deserializedModels);
 
     this.notifyData = notifyData;
   }

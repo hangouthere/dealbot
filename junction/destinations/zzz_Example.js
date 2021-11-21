@@ -6,7 +6,7 @@ const config = {
   name: 'Duplicate Destination ID Entry',
   type: 'http_post',
   template: "doesn't matter",
-  data: {
+  extraOptions: {
     feed: 'https://www.reddit.com/r/buildapcsales/.rss?sort=new'
   }
 };

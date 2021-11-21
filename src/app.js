@@ -72,7 +72,9 @@ class App {
   async _jobClearAllEntries() {
     this._startJob('Clear Entries');
 
-    await knex('entries').delete();
+    const num = await knex('entries').delete();
+
+    Logger.info(`Cleared ${num} Entries`);
 
     this._endJob('Clear Entries');
 

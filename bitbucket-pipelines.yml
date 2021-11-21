@@ -1,12 +1,42 @@
 image: node:16
 
 pipelines:
-  default:
-    - parallel:
-        - step:
-            name: Install Dependencies & Build Project
-            caches:
-              - node
-            script:
-              - npm i --legacy-peer-deps
-              - npm run build
+  custom:
+    testBuildDocker:
+      - step:
+          name: Docker - Build and Test
+          script:
+            - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+            - docker build . --file Dockerfile -t ${IMAGE_NAME}
+          services:
+            - docker
+          caches:
+            - docker
+
+  branches:
+    master:
+      - step:
+          name: Docker - Build and Test
+          script:
+            - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+            - docker build . --file Dockerfile -t ${IMAGE_NAME}
+            - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
+          services:
+            - docker
+          caches:
+            - docker
+          artifacts:
+            - '*.tar'
+      - step:
+          name: Docker - Deploy Image to DockerHub
+          deployment: Production
+          script:
+            - echo ${DOCKERHUB_PASSWORD} | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+            - docker load --input "${IMAGE_NAME}.tar"
+            - VERSION="0.1.${BITBUCKET_BUILD_NUMBER}"
+            - IMAGE=${DOCKERHUB_NAMESPACE}/${IMAGE_NAME}
+            - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
+            - docker push "${IMAGE}:${VERSION}"
+          services:
+            - docker

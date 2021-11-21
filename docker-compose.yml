@@ -3,12 +3,9 @@ version: '3.7'
 services:
   dealbot:
     image: nfg/dealbot:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     environment:
       - TERM=xterm-256color
-    stdin_open: true
     tty: true
-    volumes:
-      - './trackerDescriptors:/build/trackerDescriptors'
-    ports:
-      - '3000:1234'
-      - '9229:9229'

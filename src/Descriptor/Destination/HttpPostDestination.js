@@ -4,35 +4,45 @@ const { RateLimiter } = require('limiter');
 
 const Logger = require('-/Logger');
 const DescriptorDestination = require('./DescriptorDestination');
+const chalk = require('chalk');
 
 module.exports = class HttpPostDestination extends DescriptorDestination {
   get url() {
-    return this.config?.data.url;
+    return this.config?.extraOptions.url;
   }
 
   constructor(config) {
     super(config);
 
-    if (!config.data.requestLimits) {
-      throw new Error('HTTP Post Descriptor must have `data.requestLimits` defined!');
+    if (!config.extraOptions.requestLimits) {
+      throw new Error('HTTP Post Descriptor must have `extraOptions.requestLimits` defined!');
     }
 
-    this._limiter = new RateLimiter(config.data.requestLimits);
+    this._limiter = new RateLimiter(config.extraOptions.requestLimits);
   }
 
-  async notifyDestination({ templatedEntry }) {
+  async notifyDestination({ deserializedData, sourceLoader, templatedEntry }) {
     await this._limiter.removeTokens(1);
 
     // Then try to Attempt Notify...
-    return await this._httpPost(templatedEntry);
+    const resp = await this._httpPost(templatedEntry);
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      Logger.error(
+        `Entry Failed to Notify: ${chalk.red(`[${err.message}]`)} ${sourceLoader.getEntryName(deserializedData)}`
+      );
+    }
+
+    return resp;
   }
 
   _updateTokenBucket(rateLimit, rateWindow) {
     // Reset the request limits based on response headers
-    this.config.data.requestLimits.tokensPerInterval = rateLimit;
-    this.config.data.requestLimits.interval += rateWindow;
+    this.config.extraOptions.requestLimits.tokensPerInterval = rateLimit;
+    this.config.extraOptions.requestLimits.interval += rateWindow;
 
-    this._limiter = new RateLimiter(this.config.data.requestLimits);
+    this._limiter = new RateLimiter(this.config.extraOptions.requestLimits);
   }
 
   _sleep = duration => new Promise(r => setTimeout(r, duration));
@@ -56,7 +66,7 @@ module.exports = class HttpPostDestination extends DescriptorDestination {
 
     Logger.debug(`Exceeded API Request Rate, will Retry [Retry-After]: ${respDuration}`);
     Logger.debug(
-      `Setting Rate Limit to ${this.config.data.requestLimits.tokensPerInterval} and Rate Window to ${this.config.data.requestLimits.interval}`
+      `Setting Rate Limit to ${this.config.extraOptions.requestLimits.tokensPerInterval} and Rate Window to ${this.config.extraOptions.requestLimits.interval}`
     );
 
     // Wait for the time specified in the 429 response

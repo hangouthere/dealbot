@@ -1,11 +1,11 @@
 const md5 = require('md5');
 const RSSParser = require('rss-parser');
 
-const TrackerSource = require('./DescriptorSource');
+const DescriptorSource = require('./DescriptorSource');
 
 const Parser = new RSSParser();
 
-class RssTrackerSource extends TrackerSource {
+class RssSource extends DescriptorSource {
   get items() {
     return this.data?.items;
   }
@@ -25,7 +25,7 @@ class RssTrackerSource extends TrackerSource {
   }
 
   get feedUrl() {
-    return this.config?.data.feed;
+    return this.config?.extraOptions.feed;
   }
 
   // @ts-ignore (Silly typescript-only error about types not matching base class)
@@ -34,4 +34,4 @@ class RssTrackerSource extends TrackerSource {
   }
 }
 
-module.exports = RssTrackerSource;
+module.exports = RssSource;

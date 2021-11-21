@@ -7,11 +7,28 @@ const Separator = (force = false) => {
   chosenLogger(chalk.blue(new Array(150).fill('-').join('')));
 };
 
-const finalizeAndNormalize = async entries => {
+const FinalizeAndNormalize = async entries => {
   const promises = await Promise.all(entries);
 
   // Only return non-null items
   return promises.filter(v => !!v);
+};
+
+const NormalizeToArrayIfPossible = inputConfig => {
+  if (!inputConfig) return [];
+
+  const configIsArray = Array.isArray(inputConfig);
+  const configIsString = typeof inputConfig === 'string';
+
+  if (configIsArray) {
+    return inputConfig;
+  }
+
+  if (configIsString) {
+    return inputConfig.toLowerCase().split(' ');
+  }
+
+  return inputConfig;
 };
 
 // Detect if we're in a node runtime (vs a binary)
@@ -23,6 +40,6 @@ const cmdName = isNodeRuntime ? `${process.argv[0]} ${process.argv[1]}` : proces
 exports.isProd = 'development' !== process.env.NODE_ENV;
 
 exports.Separator = Separator;
-exports.finalizeAndNormalize = finalizeAndNormalize;
-
+exports.FinalizeAndNormalize = FinalizeAndNormalize;
 exports.RunCommandName = cmdName;
+exports.NormalizeToArrayIfPossible = NormalizeToArrayIfPossible;

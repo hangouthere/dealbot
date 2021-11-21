@@ -2,12 +2,12 @@ version: '3.7'
 
 services:
   dealbot:
-    build: .
-    command: npm run docker-compose
+    build:
+      target: development
     volumes:
       - .:/build
       # - /build/node_modules
     environment:
       - NODE_OPTIONS=--enable-source-maps --trace-warnings
     ports:
-      - '3000:1234'
+      - '9229:9229'

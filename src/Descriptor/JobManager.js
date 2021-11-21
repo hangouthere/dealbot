@@ -1,7 +1,7 @@
 const EntriesModel = require('../db/Models/EntriesModel');
 
 const Logger = require('-/Logger');
-const { Separator, finalizeAndNormalize } = require('-/Util');
+const { Separator, FinalizeAndNormalize } = require('-/Util');
 const chalk = require('chalk');
 const DescriptorImporter = require('./DescriptorImporter');
 
@@ -33,23 +33,24 @@ module.exports = class JobManager {
   async _hydrateDescriptors(descriptors) {
     const entries = descriptors.map(async currDescriptor => {
       try {
+        Logger.debug(`Hydrating Data for Descriptor: ${currDescriptor.name}`);
         await currDescriptor.hydrate();
         return currDescriptor;
       } catch (err) {
-        Logger.error(`Error Scanning Source: ${currDescriptor.name}\n\t${err}`);
+        Logger.trace(`Error Hydrating Descriptor: ${currDescriptor.name}\n\t${err}`);
         return null;
       }
     });
 
-    return finalizeAndNormalize(entries);
+    return FinalizeAndNormalize(entries);
   }
 
   async _importAllDescriptors() {
     const destinations = await DescriptorImporter.ImportDestinations();
     const sources = await DescriptorImporter.ImportSources();
 
-    Logger.info(`Imported ${destinations.length} Destination Descriptors`);
-    Logger.info(`Imported ${sources.length} Source Descriptors`);
+    Logger.debug(`Imported ${destinations.length} Destination Descriptors`);
+    Logger.debug(`Imported ${sources.length} Source Descriptors`);
 
     return { sources, destinations };
   }
@@ -62,7 +63,6 @@ module.exports = class JobManager {
     const { sources } = await this._importAllDescriptors();
 
     if (!sources.length) {
-      //! TODO - Test this
       throw new Error(
         `No Destination Descriptors Found. Please ensure path is correct: ${DescriptorImporter.PathDescriptorsSources}`
       );
@@ -74,7 +74,7 @@ module.exports = class JobManager {
   }
 
   /**************************************************************************************************************************************
-   * Filtering and Storing Tracker Source Entries
+   * Filtering and Storing Source Entries
    *************************************************************************************************************************************/
 
   async _saveSourcesEntries(sources) {
@@ -163,7 +163,6 @@ module.exports = class JobManager {
           .fetch()
       );
     } catch (err) {
-      // TODO: Need to make sure this error is actually 'not found'
       return null;
     }
   }
@@ -180,7 +179,6 @@ module.exports = class JobManager {
     let { destinations } = await this._importAllDescriptors();
 
     if (!destinations.length) {
-      //! TODO - Test this
       throw new Error(
         `No Destination Descriptors Found. Please ensure path is correct: ${DescriptorImporter.PathDescriptorsDestinations}`
       );
@@ -188,13 +186,16 @@ module.exports = class JobManager {
 
     destinations = await this._hydrateDescriptors(destinations);
 
-    const deserializePromises = destinations.map(
-      async destination => await destination.deserializeEntries(DescriptorImporter.LoadMap.sources)
+    const deserializePromises = destinations.map(async destination =>
+      0 === destination.serializedData.length
+        ? null
+        : await destination.deserializeEntries(DescriptorImporter.LoadMap.sources)
     );
 
-    await finalizeAndNormalize(deserializePromises);
+    await FinalizeAndNormalize(deserializePromises);
 
-    return destinations;
+    // Only return if deserialized notifyData
+    return destinations.filter(d => !!d.notifyData);
   }
 
   /**************************************************************************************************************************************
