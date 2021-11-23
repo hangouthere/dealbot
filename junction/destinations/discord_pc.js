@@ -14,7 +14,7 @@ const config = {
                 ]
               }`,
   extraOptions: {
-    url: 'https://discord.com/api/webhooks/907756988740554833/DrufzQ61uMyfXFvgnIkg5uvsnPahfd0UojJVUyxwLFBtFLXf2K2-01lLwnnBAuf6hFCP',
+    url: 'https://discord.com/api/webhooks/CHANGE_THIS',
     requestLimits: {
       tokensPerInterval: 5,
       interval: 1000
